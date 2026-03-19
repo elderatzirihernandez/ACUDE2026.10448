@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realizando Examen - ACUDE 2026</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- KaTeX para fórmulas matemáticas y químicas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Sweet Alert 2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+        }
+        
+        body {
+            background: #f8f9fa;
+        }
+        
+        .navbar-custom {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .config-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 2rem auto;
+            max-width: 600px;
+        }
+        
+        .btn-cantidad {
+            min-width: 120px;
+            margin: 0.5rem;
+            padding: 1rem;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        
+        .btn-cantidad:hover {
+            transform: scale(1.05);
+        }
+        
+        .pregunta-container {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 2rem 0;
+        }
+        
+        .opcion-item {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 15px;
+            padding: 1rem;
+            margin: 0.75rem 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1rem;
+        }
+        
+        .opcion-item:hover {
+            background: #e9ecef;
+            border-color: var(--primary);
+            transform: translateX(10px);
+        }
+        
+        .opcion-item.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--secondary);
+        }
+        
+        .opcion-item.selected .text-muted {
+            color: white !important;
+        }
+        
+        .nav-btn {
+            min-width: 120px;
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .progress-custom {
+            height: 10px;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+        
+        .badge-dificultad {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 500;
+        }
+        
+        .dificultad-1 { background: #d4edda; color: #155724; }
+        .dificultad-2 { background: #fff3cd; color: #856404; }
+        .dificultad-3 { background: #ffe5b4; color: #8a6d3b; }
+        .dificultad-4 { background: #f8d7da; color: #721c24; }
+        .dificultad-5 { background: #c00; color: white; }
+        
+        .spinner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+        .opcion-correcta {
+    background: #28a745 !important;
+    color: white !important;
+    border-color: #1e7e34 !important;
+}
+
+.opcion-incorrecta {
+    background: #dc3545 !important;
+    color: white !important;
+    border-color: #a71d2a !important;
+}
+    </style>
+</head>
+<body>
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="navbar-custom text-white">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between w-100">
+                <div>
+                    <a href="index.html" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i> Materias
+                    </a>
+                </div>
+                <div class="text-center">
+                    <h4 class="mb-0" id="titulo-materia">Cargando...</h4>
+                    <small id="subtitulo-materia"></small>
+                </div>
+                <div>
+                    <span class="badge bg-light text-dark" id="contador-preguntas">
+                        <i class="fas fa-question-circle me-1"></i> 0/0
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container py-4">
+        <!-- SPINNER DE CARGA (visible mientras cargan los datos) -->
+        <div id="spinner" class="spinner-container">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">Cargando datos...</span>
+            </div>
+        </div>
+        
+        <!-- PANEL DE CONFIGURACIÓN (oculto hasta que carguen los datos) -->
+        <div id="panel-configuracion" class="config-card text-center" style="display: none;">
+            <i class="fas fa-sliders-h fa-3x text-primary mb-3"></i>
+            <h2 class="mb-3">Configura tu examen</h2>
+            <p class="text-muted mb-4">¿Cuántas preguntas deseas practicar?</p>
+            
+            <div class="d-flex justify-content-center flex-wrap">
+                <button class="btn btn-outline-primary btn-cantidad" data-cantidad="30">
+                    <i class="fas fa-list-ol me-2"></i>30 preguntas
+                </button>
+                <button class="btn btn-outline-primary btn-cantidad" data-cantidad="50">
+                    <i class="fas fa-list-ol me-2"></i>50 preguntas
+                </button>
+                <button class="btn btn-outline-primary btn-cantidad" data-cantidad="100">
+                    <i class="fas fa-list-ol me-2"></i>100 preguntas
+                </button>
+            </div>
+            
+            <div class="alert alert-info mt-4 mb-0 text-start">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Modo MCAT:</strong> Las preguntas incluyen contexto clínico y experimental.
+            </div>
+        </div>
+        
+        <!-- ÁREA DEL EXAMEN (oculto hasta seleccionar cantidad) -->
+        <div id="area-examen" style="display: none;">
+            <!-- BARRA DE PROGRESO -->
+            <div class="progress progress-custom mb-4">
+                <div id="barra-progreso" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+            </div>
+            
+            <!-- PREGUNTA ACTUAL -->
+            <div class="pregunta-container">
+                <!-- Badge de dificultad -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span id="badge-dificultad" class="badge-dificultad dificultad-3">
+                        <i class="fas fa-star me-1"></i> Nivel MCAT
+                    </span>
+                    <span class="text-muted" id="pregunta-numero">Pregunta 1 de 30</span>
+                </div>
+                
+                <!-- CONTEXTO (si existe) -->
+                <div id="contexto-pregunta" class="alert alert-secondary mb-4">
+                    Contexto de la pregunta...
+                </div>
+                
+                <!-- TEXTO DE LA PREGUNTA -->
+                <h5 id="texto-pregunta" class="mb-4"></h5>
+                
+                <!-- OPCIONES (A, B, C, D, E) -->
+                <div id="opciones-container"></div>
+                
+                <!-- EXPLICACIÓN (se muestra después de responder) -->
+                <div id="explicacion-container" class="mt-4" style="display: none;">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <i class="fas fa-lightbulb me-2"></i>Explicación
+                        </div>
+                        <div id="texto-explicacion" class="card-body"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- BOTONES DE NAVEGACIÓN -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <button id="btn-anterior" class="btn btn-secondary nav-btn" disabled>
+                    <i class="fas fa-arrow-left me-2"></i>Anterior
+                </button>
+                
+                <div>
+                    <span class="badge bg-secondary" id="respuestas-contador">0 respondidas</span>
+                </div>
+                
+                <button id="btn-siguiente" class="btn btn-primary nav-btn">
+                    Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+            
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <button id="btn-finalizar" class="btn btn-success w-100 py-3">
+                        <i class="fas fa-check-circle me-2"></i>Finalizar y ver resultados
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button id="btn-marcar" class="btn btn-warning w-100 py-3">
+                        <i class="fas fa-flag me-2"></i>Marcar para revisar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- ============================================ -->
+    <!-- CARGA INTELIGENTE DE ARCHIVOS (IGUAL QUE INDEX) -->
+    <!-- ============================================ -->
+    <script>
+        // Lista de archivos que VAS A CARGAR (SOLO LOS QUE EXISTEN)
+        const archivosACargar = [
+    // ============================================
+    // ARCHIVO BASE (OBLIGATORIO)
+    // ============================================
+    'js/datos.js',                    // Estructura base con las 15 materias
+    
+    // ============================================
+    // MATERIAS TRONCALES
+    // ============================================
+    'js/datos-lengua.js',              // Lengua Española (100 preguntas)
+    'js/datos-razonamiento.js',        // Razonamiento Matemático
+    'js/datos-ingles.js',              // Inglés
+    
+    // ============================================
+    // CIENCIAS QUÍMICO-BIOLÓGICAS
+    // ============================================
+    'js/datos-biologia.js',            // Biología
+    'js/datos-quimica.js',              // Química
+    'js/datos-matematicas.js',          // Matemáticas (Ciencias)
+    'js/datos-fisica.js',               // Física
+    
+    // ============================================
+    // CIENCIAS SOCIALES Y HUMANIDADES
+    // ============================================
+    'js/datos-historia.js',             // Historia
+    'js/datos-literatura.js',            // Literatura
+    'js/datos-derecho.js',               // Derecho
+    
+    // ============================================
+    // CIENCIAS EXACTAS INGENIERÍA
+    // ============================================
+    'js/datos-quimica-ing.js',           // Química (Ingeniería)
+    'js/datos-matematicas-ing.js',        // Matemáticas (Ingeniería)
+    'js/datos-fisica-ing.js',             // Física (Ingeniería)
+    
+    // ============================================
+    // CIENCIAS ECONÓMICO ADMINISTRATIVAS
+    // ============================================
+    'js/datos-economia.js',               // Economía y Administración
+    'js/datos-mates-financieras.js'        // Matemáticas Financieras
+];
+        
+        console.log("📂 Archivos a cargar en examen:", archivosACargar);
+        
+        let archivosCargados = 0;
+        const totalArchivos = archivosACargar.length;
+        
+        function cargarScript(src) {
+            return new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => {
+                    console.log(`✅ Cargado: ${src}`);
+                    archivosCargados++;
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.warn(`⚠️ No encontrado: ${src} (se omite)`);
+                    archivosCargados++;
+                    resolve(); // No falla, solo continua
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Cargar todos los archivos en secuencia
+        async function cargarTodosLosArchivos() {
+            for (const archivo of archivosACargar) {
+                await cargarScript(archivo);
+            }
+            
+            // Cuando todos terminen, inicializar el examen
+            inicializarExamen();
+        }
+        
+        function inicializarExamen() {
+            console.log("🚀 Inicializando examen...");
+            
+            // Ocultar spinner
+            document.getElementById('spinner').style.display = 'none';
+            
+            // Verificar que DATOS_ACUDE existe
+            if (typeof DATOS_ACUDE === 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error crítico',
+                    text: 'No se pudo cargar el banco de datos. Verifica que js/datos.js exista.',
+                    confirmButtonText: 'Recargar'
+                }).then(() => {
+                    window.location.reload();
+                });
+                return;
+            }
+            
+            // Obtener materia de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const materiaId = urlParams.get('materia');
+            
+            console.log("📌 Materia seleccionada:", materiaId);
+            
+            if (!materiaId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se especificó ninguna materia',
+                    confirmButtonText: 'Volver al inicio'
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return;
+            }
+            
+            // Buscar la materia
+            const materiaInfo = DATOS_ACUDE.materias.find(m => m.id === materiaId);
+            
+            if (!materiaInfo) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Materia no encontrada',
+                    text: `La materia "${materiaId}" no existe`,
+                    confirmButtonText: 'Volver al inicio'
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return;
+            }
+            
+            // Verificar que tenga preguntas
+            const totalPreguntas = DATOS_ACUDE.preguntas[materiaId]?.length || 0;
+            
+            if (totalPreguntas === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin preguntas',
+                    text: `La materia ${materiaInfo.nombre} no tiene preguntas disponibles`,
+                    confirmButtonText: 'Volver al inicio'
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return;
+            }
+            
+            // Actualizar título
+            document.getElementById('titulo-materia').textContent = materiaInfo.nombre;
+            document.getElementById('subtitulo-materia').textContent = `${totalPreguntas} preguntas disponibles`;
+            
+            // Mostrar panel de configuración
+            document.getElementById('panel-configuracion').style.display = 'block';
+            
+            console.log(`✅ Listo para comenzar examen de ${materiaInfo.nombre} con ${totalPreguntas} preguntas`);
+        }
+        
+        // Iniciar carga cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', cargarTodosLosArchivos);
+    </script>
+    
+    <!-- LÓGICA DEL EXAMEN (se carga DESPUÉS de los datos) -->
+    <script src="js/examen.js"></script>
+</body>
+</html>
